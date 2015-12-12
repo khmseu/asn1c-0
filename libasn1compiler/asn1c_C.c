@@ -84,8 +84,8 @@ static int emit_type_DEF(arg_t *arg, asn1p_expr_t *expr, enum tvm_compat tv_mode
 } while(0)
 
 /* MKID_safe() without checking for reserved keywords */
-#define	MKID(expr)	(asn1c_make_identifier(0, expr, 0))
-#define	MKID_safe(expr)	(asn1c_make_identifier(AMI_CHECK_RESERVED, expr, 0))
+#define	MKID(expr)	(asn1c_make_identifier(arg, 1, 0, expr, NULL))
+#define	MKID_safe(expr)	(asn1c_make_identifier(arg, 1, AMI_CHECK_RESERVED, expr, NULL))
 
 int
 asn1c_lang_C_type_REAL(arg_t *arg) {
@@ -740,8 +740,8 @@ asn1c_lang_C_type_SEx_OF(arg_t *arg) {
 				tmp_memb.Identifier = "Member";
 				if(0)
 				tmp_memb.Identifier = strdup(
-					asn1c_make_identifier(0,
-						expr, "Member", 0));
+					asn1c_make_identifier(arg, 1, 0,
+						expr, "Member", NULL));
 				assert(tmp_memb.Identifier);
 			}
 			tmp.default_cb(&tmp);
@@ -1170,35 +1170,6 @@ asn1c_lang_C_type_SIMPLE_TYPE(arg_t *arg) {
 		return 0;
 	}
 
-	REDIR(OT_CODE);
-
-	/*
-	 * Constraint checking.
-	 */
-	if(!(arg->flags & A1C_NO_CONSTRAINTS)) {
-		p = MKID(expr);
-		if(HIDE_INNER_DEFS) OUT("static ");
-		OUT("int\n");
-		OUT("%s", p);
-		if(HIDE_INNER_DEFS) OUT("_%d", expr->_type_unique_index);
-		OUT("_constraint(asn_TYPE_descriptor_t *td, const void *sptr,\n");
-		INDENT(+1);
-		OUT("\t\tasn_app_constraint_failed_f *ctfailcb, void *app_key) {");
-		OUT("\n");
-		DEBUG("expr constraint checking code for %s", p);
-		if(asn1c_emit_constraint_checking_code(arg) == 1) {
-			OUT("/* Replace with underlying type checker */\n");
-			OUT("td->check_constraints "
-				"= asn_DEF_%s.check_constraints;\n",
-				asn1c_type_name(arg, expr, TNF_SAFE));
-			OUT("return td->check_constraints"
-				"(td, sptr, ctfailcb, app_key);\n");
-		}
-		INDENT(-1);
-		OUT("}\n");
-		OUT("\n");
-	}
-
 	REDIR(OT_STAT_DEFS);
 
 	/*
@@ -1270,6 +1241,35 @@ asn1c_lang_C_type_SIMPLE_TYPE(arg_t *arg) {
   }
 	OUT("}\n");
 	OUT("\n");
+
+	/*
+	 * Constraint checking.
+	 */
+	if(!(arg->flags & A1C_NO_CONSTRAINTS)) {
+		p = MKID(expr);
+		if(HIDE_INNER_DEFS) OUT("static ");
+		OUT("int\n");
+		OUT("%s", p);
+		if(HIDE_INNER_DEFS) OUT("_%d", expr->_type_unique_index);
+		OUT("_constraint(asn_TYPE_descriptor_t *td, const void *sptr,\n");
+		INDENT(+1);
+		OUT("\t\tasn_app_constraint_failed_f *ctfailcb, void *app_key) {");
+		OUT("\n");
+		DEBUG("expr constraint checking code for %s", p);
+		if(asn1c_emit_constraint_checking_code(arg) == 1) {
+			OUT("/* Replace with underlying type checker */\n");
+			OUT("%s_%d_inherit_TYPE_descriptor(td);\n",
+				p, expr->_type_unique_index);
+			OUT("td->check_constraints "
+				"= asn_DEF_%s.check_constraints;\n",
+				asn1c_type_name(arg, expr, TNF_SAFE));
+			OUT("return td->check_constraints"
+				"(td, sptr, ctfailcb, app_key);\n");
+		}
+		INDENT(-1);
+		OUT("}\n");
+		OUT("\n");
+	}
 
 	p = MKID(expr);
 	if(HIDE_INNER_DEFS) OUT("static ");
@@ -1843,7 +1843,7 @@ emit_single_member_PER_constraint(arg_t *arg, asn1cnst_range_t *range, int alpha
 					FATAL("Constraint at line %d too wide "
 						"for %d-bits integer type",
 						arg->expr->_lineno,
-						sizeof(r) * 8);
+						(int)sizeof(r) * 8);
 					rbits = sizeof(r);
 					break;
 				}
@@ -1874,7 +1874,7 @@ emit_single_member_PER_constraint(arg_t *arg, asn1cnst_range_t *range, int alpha
 			OUT("{ APC_CONSTRAINED%s,%s% d, % d, ",
 				range->extensible
 					? " | APC_EXTENSIBLE" : "",
-				range->extensible ? " " : "\t", rbits, ebits);
+				range->extensible ? " " : "\t", (int)rbits, (int)ebits);
 
 			if(alphabetsize) {
 				asn1c_integer_t lv = range->left.value;
@@ -2425,8 +2425,8 @@ emit_type_DEF(arg_t *arg, asn1p_expr_t *expr, enum tvm_compat tv_mode, int tags_
 			p = ASN_EXPR_TYPE2STR(expr->expr_type);
 			OUT("\"%s\",\n", p?p:"");
 			OUT("\"%s\",\n",
-				p ? asn1c_make_identifier(AMI_CHECK_RESERVED,
-					0, p, 0) : "");
+				p ? asn1c_make_identifier(arg, 1, AMI_CHECK_RESERVED,
+					0, p, NULL) : "");
 		} else {
 			OUT("\"%s\",\n", expr->Identifier);
 			OUT("\"%s\",\n", expr->Identifier);

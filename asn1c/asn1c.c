@@ -58,6 +58,7 @@ main(int ac, char **av) {
 	enum asn1f_flags     asn1_fixer_flags	= A1F_NOFLAGS;
 	enum asn1c_flags     asn1_compiler_flags= A1C_NO_C99;
 	enum asn1print_flags asn1_printer_flags	= APF_NOFLAGS;
+	char *asn1_compiler_prefix = "";
 	int print_arg__print_out = 0;	/* Don't compile, just print parsed */
 	int print_arg__fix_n_print = 0;	/* Fix and print */
 	int warnings_as_errors = 0;	/* Treat warnings as errors */
@@ -146,6 +147,8 @@ main(int ac, char **av) {
 					pduname);
 				exit(EX_USAGE);
 			}
+		} else if(strncmp(optarg, "refix=", 6) == 0) {
+			asn1_compiler_prefix = optarg + 6;
 		} else if(strcmp(optarg, "rint-class-matrix") == 0) {
 			asn1_printer_flags |= APF_PRINT_CLASS_MATRIX;
 		} else if(strcmp(optarg, "rint-constraints") == 0) {
@@ -333,7 +336,7 @@ main(int ac, char **av) {
 	 * Compile the ASN.1 tree into a set of source files
 	 * of another language.
 	 */
-	if(asn1_compile(asn, skeletons_dir, asn1_compiler_flags,
+	if(asn1_compile(asn, skeletons_dir, asn1_compiler_flags, asn1_compiler_prefix,
 			ac + optind, optind - 1, av - optind)) {
 		exit(EX_SOFTWARE);
 	}
@@ -475,6 +478,7 @@ usage(const char *av0) {
 
 "  -gen-PER              Generate PER support code\n"
 "  -pdu={all|auto|Type}  Generate PDU table (discover PDUs automatically)\n"
+"  -prefix=PREFIX        Use a prefix on identifiers\n"
 "\n"
 
 "  -print-class-matrix   Print out the collected object class matrix (debug)\n"

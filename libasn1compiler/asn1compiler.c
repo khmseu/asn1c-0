@@ -3,12 +3,12 @@
 #include "asn1c_out.h"
 #include "asn1c_save.h"
 
-static void default_logger_cb(int, const char *fmt, ...);
+static void default_logger_cb(int, const char *fmt, ...) __attribute__((format(printf,2, 3)));
 static int asn1c_compile_expr(arg_t *arg);
 static int asn1c_attach_streams(asn1p_expr_t *expr);
 
 int
-asn1_compile(asn1p_t *asn, const char *datadir, enum asn1c_flags flags,
+asn1_compile(asn1p_t *asn, const char *datadir, enum asn1c_flags flags, const char *prefix,
 		int argc, int optc, char **argv) {
 	arg_t arg_s;
 	arg_t *arg = &arg_s;
@@ -25,6 +25,7 @@ asn1_compile(asn1p_t *asn, const char *datadir, enum asn1c_flags flags,
 	arg->default_cb = asn1c_compile_expr;
 	arg->logger_cb = default_logger_cb;
 	arg->flags = flags;
+	arg->prefix = prefix;
 	arg->asn = asn;
 
 	/*
@@ -88,7 +89,8 @@ asn1c_compile_expr(arg_t *arg) {
 			DEBUG("Parameterized type %s at line %d: %s (%d)",
 				expr->Identifier, expr->_lineno,
 				expr->specializations.pspecs_count
-				? "compiling" : "unused, skipping");
+				? "compiling" : "unused, skipping",
+				expr->specializations.pspecs_count); /* was this what was meant? */
 			for(i = 0; i<expr->specializations.pspecs_count; i++) {
 				arg->expr = expr->specializations
 						.pspec[i].my_clone;

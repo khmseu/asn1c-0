@@ -26,7 +26,7 @@ enum asn1f_flags {
  */
 int asn1f_process(asn1p_t *_asn,
 	enum asn1f_flags,
-	void (*error_log_callback)(int _severity, const char *fmt, ...));
+	void (*error_log_callback)(int _severity, const char *fmt, ...) __attribute__((format(printf,2,3))));
 
 
 /*

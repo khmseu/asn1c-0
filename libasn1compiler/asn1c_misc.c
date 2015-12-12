@@ -39,7 +39,7 @@ reserved_keyword(const char *str) {
  * Convert unsafe characters to underscores.
  */
 char *
-asn1c_make_identifier(enum ami_flags_e flags, asn1p_expr_t *expr, ...) {
+asn1c_make_identifier(arg_t *arg, int pindex, enum ami_flags_e flags, asn1p_expr_t *expr, ...) {
 	static char *storage;
 	static int storage_size;
 	int nodelimiter = 0;
@@ -73,6 +73,7 @@ asn1c_make_identifier(enum ami_flags_e flags, asn1p_expr_t *expr, ...) {
 		size += 1 + strlen(str);
 	va_end(ap);
 	if(size == -1) return NULL;
+	size += 1 + strlen(arg->prefix);
 
 	/*
 	 * Make sure we have this amount of storage.
@@ -94,7 +95,7 @@ asn1c_make_identifier(enum ami_flags_e flags, asn1p_expr_t *expr, ...) {
 	va_start(ap, expr);
 	p = storage;
 	nextstr = "";
-	for(p = storage, str = 0; str || nextstr; str = nextstr) {
+	for(str = 0; str || nextstr; str = nextstr) {
 		int subst_made = 0;
 		nextstr = second ? second : va_arg(ap, char *);
 
@@ -118,6 +119,11 @@ asn1c_make_identifier(enum ami_flags_e flags, asn1p_expr_t *expr, ...) {
 		if(str != first && !nodelimiter && !(flags & AMI_NODELIMITER))
 			*p++ = '_';	/* Delimiter between tokens */
 		nodelimiter = 0;
+
+		if (--pindex == 0) {
+			strcpy(p, arg->prefix);
+			p += strlen(arg->prefix);
+		}
 
 		/*
 		 * If it is a single argument, check that it does not clash
@@ -144,7 +150,7 @@ asn1c_make_identifier(enum ami_flags_e flags, asn1p_expr_t *expr, ...) {
 		}
 	}
 	va_end(ap);
-	*p = '\0';
+	*p++ = '\0';
 
 	assert((p - storage) <= storage_size);
 
@@ -262,24 +268,25 @@ asn1c_type_name(arg_t *arg, asn1p_expr_t *expr, enum tnfmt _format) {
 
 	switch(_format) {
 	case TNF_UNMODIFIED:
-		return asn1c_make_identifier(AMI_MASK_ONLY_SPACES,
-			0, exprid ? exprid->Identifier : typename, 0);
+		return asn1c_make_identifier(arg, -1, AMI_MASK_ONLY_SPACES,
+			0, exprid ? exprid->Identifier : typename, NULL);
 	case TNF_INCLUDE:
 		return asn1c_make_identifier(
+			arg, stdname? -1: 2,
 			AMI_MASK_ONLY_SPACES | AMI_NODELIMITER,
 			0, ((!stdname || (arg->flags & A1C_INCLUDES_QUOTED))
 				? "\"" : "<"),
 			exprid ? exprid->Identifier : typename,
 			((!stdname || (arg->flags & A1C_INCLUDES_QUOTED))
-				? ".h\"" : ".h>"), 0);
+				? ".h\"" : ".h>"), NULL);
 	case TNF_SAFE:
-		return asn1c_make_identifier(0, exprid, typename, 0);
+		return asn1c_make_identifier(arg, stdname? -1: 1, 0, exprid, typename, NULL);
 	case TNF_CTYPE:	/* C type */
-		return asn1c_make_identifier(0, exprid,
-				exprid?"t":typename, exprid?0:"t", 0);
+		return asn1c_make_identifier(arg, stdname? -1: 1, 0, exprid,
+				exprid?"t":typename, exprid?0:"t", NULL);
 	case TNF_RSAFE:	/* Recursion-safe type */
-		return asn1c_make_identifier(AMI_CHECK_RESERVED, 0,
-			"struct", " ", typename, 0);
+		return asn1c_make_identifier(arg, stdname? -1: 2, AMI_CHECK_RESERVED, 0,
+			"struct", " ", typename, NULL);
 	}
 
 	assert(!"unreachable");

@@ -183,7 +183,13 @@ asn1print_value(asn1p_value_t *val, enum asn1print_flags flags) {
 
 	switch(val->type) {
 	case ATV_NOVALUE:
-		break;
+/*
+ * noInvokeId InvokeId ::= absent:NULL
+ * NoInvokeId InvokeId ::= {noInvokeId}
+ * -> (-EF)
+ * NoInvokeId InvokeId ::= {absent: ATV_NOVALUE}
+ * so just fall through here
+ */
 	case ATV_NULL:
 		printf("NULL");
 		return 0;

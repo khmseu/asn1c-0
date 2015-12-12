@@ -83,7 +83,7 @@ enum asn1c_flags {
 /*
  * Compile the ASN.1 specification.
  */
-int asn1_compile(asn1p_t *asn, const char *datadir, enum asn1c_flags,
+int asn1_compile(asn1p_t *asn, const char *datadir, enum asn1c_flags, const char *prefix,
 	int argc, int optc, char **argv);
 
 void asn1c__add_pdu_type(const char *typename);

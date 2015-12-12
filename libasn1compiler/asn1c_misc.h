@@ -11,7 +11,7 @@ enum ami_flags_e {
   AMI_CHECK_RESERVED	= 2,	/* Check against reserved keywords */
   AMI_NODELIMITER       = 4,	/* Do not put delimiter, just concatenate */
 };
-char *asn1c_make_identifier(enum ami_flags_e, asn1p_expr_t *expr, ...);
+char *asn1c_make_identifier(arg_t *arg, int pindex, enum ami_flags_e, asn1p_expr_t *expr, ...)__attribute__ ((sentinel));
 
 /*
  * Return the type name of the specified expression.

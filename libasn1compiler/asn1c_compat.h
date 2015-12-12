@@ -7,7 +7,7 @@
  * its name returned in (*opt_tmpname).
  * The (*opt_tmpname) should then be subsequently freed by free(3).
  */
-FILE *asn1c_open_file(const char *base_part, const char *extension,
+FILE *asn1c_open_file(const char *prefix, const char *base_part, const char *extension,
 	char **opt_tmpname);
 
 /*

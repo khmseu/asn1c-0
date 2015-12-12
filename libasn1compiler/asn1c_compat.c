@@ -40,7 +40,7 @@ int mkstemp(char *template) {
 #endif
 
 FILE *
-asn1c_open_file(const char *name, const char *ext, char **opt_tmpname) {
+asn1c_open_file(const char *prefix, const char *name, const char *ext, char **opt_tmpname) {
 	int created = 1;
 #ifndef	_WIN32
 	struct stat sb;
@@ -54,9 +54,9 @@ asn1c_open_file(const char *name, const char *ext, char **opt_tmpname) {
 	/*
 	 * Compute filenames.
 	 */
-	len = strlen(name) + strlen(ext) + sizeof(".XXXXXX");
+	len = strlen(prefix) + strlen(name) + strlen(ext) + sizeof(".XXXXXX");
 	fname = alloca(len);
-	ret = snprintf(fname, len, "%s%s%s", name, ext,
+	ret = snprintf(fname, len, "%s%s%s%s", prefix, name, ext,
 		opt_tmpname ? ".XXXXXX" : "");
 	assert(ret > 0 && ret < (ssize_t)len);
 

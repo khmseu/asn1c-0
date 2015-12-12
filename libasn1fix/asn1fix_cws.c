@@ -131,7 +131,7 @@ _asn1f_parse_class_object_data(arg_t *arg, asn1p_expr_t *eclass,
 			cell = asn1p_ioc_row_cell_fetch(row,
 					chunk->content.token);
 			if(cell == NULL) {
-				FATAL("Field reference %s found in WITH SYNAX {} clause does not match actual field in Object Class %s",
+				FATAL("Field reference %s found in WITH SYNAX {} clause does not match actual field in Object Class %s at line %d",
 					chunk->content.token,
 					eclass->Identifier, eclass->_lineno);
 				if(newpos) *newpos = buf;
@@ -139,7 +139,7 @@ _asn1f_parse_class_object_data(arg_t *arg, asn1p_expr_t *eclass,
 			}
 			DEBUG("Reference %s satisfied by %s (%d)",
 				chunk->content.token,
-				buf, p - buf);
+				buf, (int)(p - buf));
 			ret = _asn1f_assign_cell_value(arg, row, cell, buf, p);
 			if(ret) return ret;
 			buf = p;
@@ -198,7 +198,7 @@ _asn1f_assign_cell_value(arg_t *arg, struct asn1p_ioc_row_s *row, struct asn1p_i
 			expr->expr_type = ASN_BASIC_INTEGER;
 			expr->value = asn1p_value_fromint(value);
 		} else {
-			WARNING("asn1c is not yet able to parse arbitrary direct values; try converting %s at line %d to a reference.", p, arg->expr->_lineno);
+			WARNING("asn1c is not yet able to parse arbitrary direct values; try converting %s at line %d to a reference", p, arg->expr->_lineno);
 			free(p);
 			return 1;
 		}

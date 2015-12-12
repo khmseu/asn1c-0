@@ -55,7 +55,7 @@ int asn_debug_indent;
 			__FILE__, __LINE__);		\
 	} while(0)
 #else	/* !__GNUC__ */
-void ASN_DEBUG_f(const char *fmt, ...);
+void ASN_DEBUG_f(const char *fmt, ...) GCC_PRINTFLIKE(1, 2);
 #define	ASN_DEBUG	ASN_DEBUG_f
 #endif	/* __GNUC__ */
 #else	/* EMIT_ASN_DEBUG != 1 */

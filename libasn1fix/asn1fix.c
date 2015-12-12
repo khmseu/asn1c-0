@@ -2,7 +2,7 @@
 #include "asn1fix.h"
 
 /* Print everything to stderr */
-static void _default_error_logger(int _severity, const char *fmt, ...);
+static void _default_error_logger(int _severity, const char *fmt, ...) __attribute__((format(printf,2,3)));
 
 /*
  * Internal check functions.

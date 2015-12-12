@@ -37,7 +37,7 @@ typedef struct compiler_streams {
 static char *_compiler_stream2str[] __attribute__ ((unused))
     = { "IGNORE", "INCLUDES", "DEPS", "FWD-DECLS", "TYPE-DECLS", "FUNC-DECLS", "POST-INCLUDE", "CTABLES", "CODE", "CTDEFS", "STAT-DEFS" };
 
-int asn1c_compiled_output(arg_t *arg, const char *fmt, ...);
+int asn1c_compiled_output(arg_t *arg, const char *fmt, ...) __attribute__((format(printf,2, 3)));
 
 
 /*****************************************************************

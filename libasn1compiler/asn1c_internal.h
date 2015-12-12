@@ -44,8 +44,9 @@
 typedef struct arg_s {
 
 	enum asn1c_flags flags;
+	const char *prefix;
 
-	void (*logger_cb)(int _severity, const char *fmt, ...);
+	void (*logger_cb)(int _severity, const char *fmt, ...) __attribute__((format(printf,2, 3)));
 
 	int (*default_cb)(struct arg_s *);
 

@@ -60,7 +60,7 @@ asn1c_save_compiled_output(arg_t *arg, const char *datadir,
 		return 0;	/* Finished */
 	}
 
-	mkf = asn1c_open_file("Makefile.am", ".sample", 0);
+	mkf = asn1c_open_file(arg->prefix, "Makefile.am", ".sample", 0);
 	if(mkf == NULL) {
 		perror("Makefile.am.sample");
 		return -1;
@@ -71,8 +71,8 @@ asn1c_save_compiled_output(arg_t *arg, const char *datadir,
 		TQ_FOR(arg->expr, &(mod->members), next) {
 			if(asn1_lang_map[arg->expr->meta_type]
 				[arg->expr->expr_type].type_cb) {
-				fprintf(mkf, "\t\\\n\t%s.c",
-				arg->expr->Identifier);
+				fprintf(mkf, "\t\\\n\t%s%s.c",
+				arg->prefix, arg->expr->Identifier);
 			}
 		}
 	}
@@ -81,8 +81,8 @@ asn1c_save_compiled_output(arg_t *arg, const char *datadir,
 		TQ_FOR(arg->expr, &(mod->members), next) {
 			if(asn1_lang_map[arg->expr->meta_type]
 				[arg->expr->expr_type].type_cb) {
-				fprintf(mkf, "\t\\\n\t%s.h",
-				arg->expr->Identifier);
+				fprintf(mkf, "\t\\\n\t%s%s.h",
+				arg->prefix, arg->expr->Identifier);
 			}
 		}
 	}
@@ -135,7 +135,7 @@ asn1c_save_compiled_output(arg_t *arg, const char *datadir,
 	}
 
 	if(need_to_generate_pdu_collection(arg)) {
-		fprintf(mkf, "ASN_CONVERTER_SOURCES+=pdu_collection.c\n");
+		fprintf(mkf, "ASN_CONVERTER_SOURCES+=%spdu_collection.c\n", arg->prefix);
 		if(generate_pdu_collection_file(arg))
 			return -1;
 	}
@@ -174,7 +174,7 @@ asn1c_save_compiled_output(arg_t *arg, const char *datadir,
 	fprintf(mkf, "\n\n");
 
 	fclose(mkf);
-	fprintf(stderr, "Generated Makefile.am.sample\n");
+	fprintf(stderr, "Generated %sMakefile.am.sample\n", arg->prefix);
 
 	return 0;
 }
@@ -232,8 +232,8 @@ asn1c_save_streams(arg_t *arg, asn1c_fdeps_t *deps, int optc, char **argv) {
 		return -1;
 	}
 
-	fp_c = asn1c_open_file(expr->Identifier, ".c", &tmpname_c);
-	fp_h = asn1c_open_file(expr->Identifier, ".h", &tmpname_h);
+	fp_c = asn1c_open_file(arg->prefix, expr->Identifier, ".c", &tmpname_c);
+	fp_h = asn1c_open_file(arg->prefix, expr->Identifier, ".h", &tmpname_h);
 	if(fp_c == NULL || fp_h == NULL) {
 		if(fp_c) { unlink(tmpname_c); free(tmpname_c); fclose(fp_c); }
 		if(fp_h) { unlink(tmpname_h); free(tmpname_h); fclose(fp_h); }
@@ -243,7 +243,7 @@ asn1c_save_streams(arg_t *arg, asn1c_fdeps_t *deps, int optc, char **argv) {
 	generate_preamble(arg, fp_c, optc, argv);
 	generate_preamble(arg, fp_h, optc, argv);
 
-	header_id = asn1c_make_identifier(0, expr, NULL);
+	header_id = asn1c_make_identifier(arg, 1, 0, expr, NULL);
 	fprintf(fp_h,
 		"#ifndef\t_%s_H_\n"
 		"#define\t_%s_H_\n"
@@ -276,7 +276,7 @@ asn1c_save_streams(arg_t *arg, asn1c_fdeps_t *deps, int optc, char **argv) {
 	fprintf(fp_h, "\n#endif\t/* _%s_H_ */\n", header_id);
 
 	HINCLUDE("asn_internal.h");
-	fprintf(fp_c, "#include \"%s.h\"\n\n", expr->Identifier);
+	fprintf(fp_c, "#include \"%s%s.h\"\n\n", arg->prefix, expr->Identifier);
 	if(arg->flags & A1C_NO_INCLUDE_DEPS)
 		SAVE_STREAM(fp_c, OT_POST_INCLUDE, "", 1);
 	TQ_FOR(ot, &(cs->destination[OT_CTABLES].chunks), next)
@@ -293,9 +293,9 @@ asn1c_save_streams(arg_t *arg, asn1c_fdeps_t *deps, int optc, char **argv) {
 	fclose(fp_c);
 	fclose(fp_h);
 
-	name_buf = alloca(strlen(expr->Identifier) + 3);
+	name_buf = alloca(strlen(arg->prefix) + strlen(expr->Identifier) + 3);
 
-	sprintf(name_buf, "%s.c", expr->Identifier);
+	sprintf(name_buf, "%s%s.c", arg->prefix, expr->Identifier);
 	if(identical_files(name_buf, tmpname_c)) {
 		c_retained = " (contents unchanged)";
 		unlink(tmpname_c);
@@ -309,7 +309,7 @@ asn1c_save_streams(arg_t *arg, asn1c_fdeps_t *deps, int optc, char **argv) {
 		}
 	}
 
-	sprintf(name_buf, "%s.h", expr->Identifier);
+	sprintf(name_buf, "%s%s.h", arg->prefix, expr->Identifier);
 	if(identical_files(name_buf, tmpname_h)) {
 		h_retained = " (contents unchanged)";
 		unlink(tmpname_h);
@@ -326,10 +326,10 @@ asn1c_save_streams(arg_t *arg, asn1c_fdeps_t *deps, int optc, char **argv) {
 	free(tmpname_c);
 	free(tmpname_h);
 
-	fprintf(stderr, "Compiled %s.c%s\n",
-		expr->Identifier, c_retained);
-	fprintf(stderr, "Compiled %s.h%s\n",
-		expr->Identifier, h_retained);
+	fprintf(stderr, "Compiled %s%s.c%s\n",
+		arg->prefix, expr->Identifier, c_retained);
+	fprintf(stderr, "Compiled %s%s.h%s\n",
+		arg->prefix, expr->Identifier, h_retained);
 	return 0;
 }
 
@@ -405,7 +405,7 @@ real_copy(const char *src, const char *dst) {
 
 	fpsrc = fopen(src, "r");
 	if(!fpsrc) { errno = EIO; return -1; }
-	fpdst = asn1c_open_file(dst, "", &tmpname);
+	fpdst = asn1c_open_file("", dst, "", &tmpname);
 	if(!fpdst) { fclose(fpsrc); errno = EIO; return -1; }
 
 	while(!feof(fpsrc)) {
@@ -487,7 +487,7 @@ generate_pdu_collection_file(arg_t *arg) {
 	asn1p_module_t *mod;
 	FILE *fp;
 
-	fp = asn1c_open_file("pdu_collection", ".c", 0);
+	fp = asn1c_open_file(arg->prefix, "pdu_collection", ".c", 0);
 	if(fp == NULL) {
 		perror("pdu_collection.c");
 		return -1;
@@ -506,7 +506,7 @@ generate_pdu_collection_file(arg_t *arg) {
 				continue;
 			fprintf(fp, "extern struct asn_TYPE_descriptor_s "
 				"asn_DEF_%s;\n",
-				asn1c_make_identifier(0, arg->expr, NULL));
+				asn1c_make_identifier(arg, 1, 0, arg->expr, NULL));
 		}
 	}
 
@@ -522,7 +522,7 @@ generate_pdu_collection_file(arg_t *arg) {
 				arg->expr->module->ModuleName,
 				arg->expr->module->source_file_name);
 			fprintf(fp, "\t&asn_DEF_%s,\t\n",
-				asn1c_make_identifier(0, arg->expr, NULL));
+				asn1c_make_identifier(arg, 1, 0, arg->expr, NULL));
 		}
 	}
 
@@ -531,7 +531,7 @@ generate_pdu_collection_file(arg_t *arg) {
 	pdu_collection_print_unused_types(arg);
 
 	fclose(fp);
-	fprintf(stderr, "Generated pdu_collection.c\n");
+	fprintf(stderr, "Generated %spdu_collection.c\n", arg->prefix);
 
 	return 0;
 }
